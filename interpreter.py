@@ -51,9 +51,9 @@ class Interpreter2048:
         # score was last incremented by. Filter that out below:
         score = soup.find('div', class_='score-container').get_text()
         if score.find('+') == -1:
-            return score
+            return int(score)
         else:
-            return score[:score.index('+')]
+            return int(score[:score.index('+')])
 
     def is_game_over(self):
         """Determines whether the 2048 game has ended."""
@@ -73,7 +73,7 @@ class Interpreter2048:
         html_tiles = soup.find_all('div', class_='tile')
         tiles = np.zeros((4, 4))
         for html_tile in html_tiles:
-            tile_value = int(html_tile.get_text())
+            tile_value = np.log2(int(html_tile.get_text()))
             tile_pos_class = html_tile['class'][2]
 
             if not tile_pos_class.startswith('tile-position-'):
@@ -85,4 +85,4 @@ class Interpreter2048:
             tile_pos = (int(tile_pos_class[-1:]) - 1, int(tile_pos_class[-3:-2]) - 1)
             tiles[tile_pos] = tile_value
 
-        return np.log2(tiles)
+        return tiles
