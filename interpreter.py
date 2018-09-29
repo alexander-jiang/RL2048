@@ -76,13 +76,19 @@ class Interpreter2048:
             tile_value = np.log2(int(html_tile.get_text()))
             tile_pos_class = html_tile['class'][2]
 
+            # Usually the tile-position-X-Y class is third in the list of CSS
+            # classes, but in case it isn't:
             if not tile_pos_class.startswith('tile-position-'):
                 for tile_class in html_tile['class']:
                     if tile_class.startswith('tile-position-'):
                         tile_pos_class = tile_class
                         break
 
+            # The X-Y coords in the CSS class are in column-major order and are 1-indexed
             tile_pos = (int(tile_pos_class[-1:]) - 1, int(tile_pos_class[-3:-2]) - 1)
-            tiles[tile_pos] = tile_value
+
+            # We should only update with a larger value (i.e. the merged value)
+            if tiles[tile_pos] < tile_value:
+                tiles[tile_pos] = tile_value
 
         return tiles
