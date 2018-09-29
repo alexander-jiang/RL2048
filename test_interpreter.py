@@ -21,17 +21,13 @@ def main():
     game = interpreter.Interpreter2048()
     game.open()
 
-    soup = game.get_html_parser()
-    html_tiles = soup.find_all('div', class_='tile')
-    print 'tiles:', html_tiles
+    print 'tiles:', game.read_tiles()
     print 'score:', game.current_score()
 
     print 'input: UP'
     game.input_key(Keys.UP)
 
-    soup = game.get_html_parser()
-    html_tiles = soup.find_all('div', class_='tile')
-    print 'tiles:', html_tiles
+    print 'tiles:', game.read_tiles()
     print 'score:', game.current_score()
 
     game.close()

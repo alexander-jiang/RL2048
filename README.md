@@ -7,7 +7,5 @@ Reinforcement learning model to play the 2048 game.
 - Actions: the 4 directions
 
 TODO:
-- finalize interface for the interpreter
-- implement interpreter
 - implement recorder to document each session
 - implement RL model using interpreter

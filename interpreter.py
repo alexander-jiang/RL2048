@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
+import numpy as np
 
 class Interpreter2048:
     def __init__(self):
@@ -61,14 +62,27 @@ class Interpreter2048:
         game_over_screen = soup.find('div', class_='game-over')
         return game_over_screen is not None
 
-    def read_tiles():
-        """Returns the grid of tiles in the game."""
+    def read_tiles(self):
+        """
+        Returns the grid of tiles in the game into a 2D array (4x4), where
+        each tile is replaced by its value log-2.
+        """
         assert self.opened
         soup = self.get_html_parser()
 
         html_tiles = soup.find_all('div', class_='tile')
-        if len(html_tiles) == 0:
-            return []
+        tiles = np.zeros((4, 4))
+        for html_tile in html_tiles:
+            tile_value = int(html_tile.get_text())
+            tile_pos_class = html_tile['class'][2]
 
-        # TODO finish parsing this
-        return html_tiles
+            if not tile_pos_class.startswith('tile-position-'):
+                for tile_class in html_tile['class']:
+                    if tile_class.startswith('tile-position-'):
+                        tile_pos_class = tile_class
+                        break
+
+            tile_pos = (int(tile_pos_class[-1:]) - 1, int(tile_pos_class[-3:-2]) - 1)
+            tiles[tile_pos] = tile_value
+
+        return np.log2(tiles)
