@@ -1,27 +1,53 @@
+from datetime import datetime
 import random
+import os
 
 NUM_ROWS = 4
 NUM_COLS = 4
+GAME_FILES_DIR = 'games'
 
 class GameState:
-    def __init__(self, tiles=[[0] * 4 for i in range(4)], score=0, game_over=False, random_seed=None):
+    def __init__(self, tiles=[[0] * 4 for i in range(4)], score=0, game_over=False):
         assert len(tiles) == NUM_ROWS
         assert len(tiles[0]) == NUM_COLS
         assert score >= 0
         self.tiles = tiles
         self.score = score
         self.game_over = game_over
+
+    def reset_state(self):
+        self.tiles = [[0] * 4 for i in range(4)]
+        self.score = 0
+        self.game_over = False
+
+    def new_game(self, random_seed=None):
+        self.reset_state()
+
         if random_seed is None:
             self.random_seed = random.getrandbits(16)
         else:
             self.random_seed = random_seed
         random.seed(self.random_seed)
 
-    def clear(self):
-        self.tiles = [[0] * 4 for i in range(4)]
-        self.score = 0
-        self.game_over = False
-        random.seed(self.random_seed)
+        self.spawn_tile()
+        self.spawn_tile()
+
+        self.game_filename = os.path.join(GAME_FILES_DIR, datetime.now().strftime(f"%Y-%m-%d-%H-%M-%S_{self.random_seed}.csv"))
+        self.append_game_state()
+
+    def append_game_state(self):
+        assert self.game_filename is not None
+        if not os.path.isdir(GAME_FILES_DIR):
+            os.mkdir(GAME_FILES_DIR)
+
+        with open(self.game_filename, 'a') as game_file:
+            game_file.write(f"{self.game_over},{self.score},")
+            for i in range(NUM_ROWS):
+                for j in range(NUM_COLS):
+                    if i == NUM_ROWS - 1 and j == NUM_COLS - 1:
+                        game_file.write(f"{self.tiles[i][j]}\n")
+                    else:
+                        game_file.write(f"{self.tiles[i][j]},")
 
     def move_tiles(self, dir):
         if self.game_over:
@@ -102,6 +128,8 @@ class GameState:
             # if there are no valid moves left, then game is over
             if not self.moves_available():
                 self.game_over = True
+
+            self.append_game_state()
 
     def moves_available(self):
         # returns a list containing the valid movement directions from ["Up", "Down", "Left", "Right"]

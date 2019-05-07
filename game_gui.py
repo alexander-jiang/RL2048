@@ -88,11 +88,8 @@ class GameWindow(tk.Frame):
         self.score_strvar.set(f"Score: {self.game_state.score}")
 
     def new_game(self):
-        print(f"Started a new game!")
-        self.game_state.clear()
-        # start game with two random tiles
-        self.game_state.spawn_tile()
-        self.game_state.spawn_tile()
+        self.game_state.new_game()
+        print(f"Started a new game! Saving to {self.game_state.game_filename}")
         self.draw_game_tiles()
         self.draw_score()
 
@@ -104,8 +101,8 @@ class GameWindow(tk.Frame):
         if self.game_state.game_over:
             # TODO display a message on GUI
             print("Game over! no moves available")
-        else:
-            print(f"moves available: {self.game_state.moves_available()}")
+        # else:
+            # print(f"moves available: {self.game_state.moves_available()}")
 
 root = tk.Tk()
 root.geometry("500x500")
