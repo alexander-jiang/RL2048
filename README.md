@@ -10,8 +10,6 @@ Reinforcement learning model to play the 2048 game.
 - Actions: the 4 directions
 
 TODO:
-- finish simulator
-  - implement random seed in simulator so that added tiles can be deterministic (for comparison)
 - implement recorder to document each session
   - save game state by encoding each turn as a comma-separated line?
 - build naive bots (e.g. random moves, or top-left biased random moves) for comparison/prototyping
