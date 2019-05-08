@@ -130,6 +130,11 @@ class GameState:
                 self.game_over = True
 
             self.append_game_state()
+            # TODO investigate the "Failed to create the menu window" error... from tkinter?\
+            # to repro: seems to occur deep into the game. memory leak/stack overflow issue?
+            # after around 500-600 turns in the same window, tkinter starts freezing up and a tile
+            # starts appearing the in top-left corner of the screen (seems like the game state is still updating in the background, though)
+
 
     def moves_available(self):
         # returns a list containing the valid movement directions from ["Up", "Down", "Left", "Right"]
