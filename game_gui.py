@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import filedialog
 from game_engine import GameState
 
 tile_bkgrd_color = {
@@ -83,10 +84,6 @@ class GameWindow(tk.Frame):
         self.master = master
         self.grid()
         self.create_widgets()
-        self.master.bind('<Up>', self.move)
-        self.master.bind('<Down>', self.move)
-        self.master.bind('<Left>', self.move)
-        self.master.bind('<Right>', self.move)
 
     def create_widgets(self):
         self.game_state = GameState()
@@ -99,8 +96,11 @@ class GameWindow(tk.Frame):
         self.draw_score()
         self.game_score.grid()
 
-        self.new_game = tk.Button(self, text="New Game", command=self.new_game)
-        self.new_game.grid()
+        self.new_game_button = tk.Button(self, text="New Game", command=self.new_game)
+        self.new_game_button.grid()
+
+        self.load_game_button = tk.Button(self, text="Load Game", command=self.load_game)
+        self.load_game_button.grid()
 
         self.quit = tk.Button(self, text="Quit", fg="red", command=self.master.destroy)
         self.quit.grid()
@@ -112,10 +112,53 @@ class GameWindow(tk.Frame):
         self.score_strvar.set(f"Score: {self.game_state.score}")
 
     def new_game(self):
+        self.master.bind('<Up>', self.move)
+        self.master.bind('<Down>', self.move)
+        self.master.bind('<Left>', self.move)
+        self.master.bind('<Right>', self.move)
+
         self.game_state.new_game()
         print(f"Started a new game! Saving to {self.game_state.game_filename}")
         self.draw_game_tiles()
         self.draw_score()
+
+    def load_game(self):
+        fname = filedialog.askopenfilename(filetypes=(("CSV files", "*.csv"),))
+        if fname:
+            self.master.unbind('<Up>')
+            self.master.unbind('<Down>')
+            self.master.bind('<Left>', self.decrement_turn_number)
+            self.master.bind('<Right>', self.increment_turn_number)
+            print(f"Loading game from {fname}!")
+            with open(fname, 'r') as game_file:
+                self.game_states = game_file.readlines()
+                self.turn_number = 0
+                self.load_game_state()
+
+    def load_game_state(self):
+        self.game_state = GameState()
+
+        print(f"turn number = {self.turn_number}")
+        tokens = self.game_states[self.turn_number].split(',')
+        self.game_state.game_over = tokens[0]
+        self.game_state.score = tokens[1]
+        for i in range(2, 18):
+            k = i - 2
+            self.game_state.tiles[k // 4][k % 4] = int(tokens[i])
+        print(f"action from this state: {tokens[-1].strip()}")
+
+        self.draw_game_tiles()
+        self.draw_score()
+
+    def increment_turn_number(self, event):
+        if self.turn_number < len(self.game_states) - 1:
+            self.turn_number += 1
+            self.load_game_state()
+
+    def decrement_turn_number(self, event):
+        if self.turn_number > 0:
+            self.turn_number -= 1
+            self.load_game_state()
 
     def move(self, event):
         print(f"moving in dir {event.keysym}")
@@ -129,7 +172,7 @@ class GameWindow(tk.Frame):
             # print(f"moves available: {self.game_state.moves_available()}")
 
 root = tk.Tk()
-root.geometry("500x500")
+root.geometry("500x600")
 
 app = GameWindow(master=root)
 app.mainloop()

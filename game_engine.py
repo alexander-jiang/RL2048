@@ -44,10 +44,18 @@ class GameState:
             game_file.write(f"{self.game_over},{self.score},")
             for i in range(NUM_ROWS):
                 for j in range(NUM_COLS):
-                    if i == NUM_ROWS - 1 and j == NUM_COLS - 1:
-                        game_file.write(f"{self.tiles[i][j]}\n")
-                    else:
-                        game_file.write(f"{self.tiles[i][j]},")
+                    # if i == NUM_ROWS - 1 and j == NUM_COLS - 1:
+                    #     game_file.write(f"{self.tiles[i][j]}\n")
+                    # else:
+                    game_file.write(f"{self.tiles[i][j]},")
+
+    def append_game_action(self, dir):
+        assert self.game_filename is not None
+        if not os.path.isdir(GAME_FILES_DIR):
+            os.mkdir(GAME_FILES_DIR)
+
+        with open(self.game_filename, 'a') as game_file:
+            game_file.write(f"{dir}\n")
 
     def move_tiles(self, dir):
         if self.game_over:
@@ -56,6 +64,8 @@ class GameState:
 
         # dir is either "Up", "Down", "Left", or "Right"
         assert dir in ["Up", "Down", "Left", "Right"]
+
+        available_moves = self.moves_available()
 
         # contains coordinates from rows or columns, ordered based on direction (e.g. if
         # dir is Up, then the groups contains the columns ordered from top-to-bottom)
@@ -123,6 +133,9 @@ class GameState:
                             last_tile_idx = idx
 
         if moved_any:
+            assert dir in available_moves
+            self.append_game_action(dir)
+
             self.spawn_tile()
 
             # if there are no valid moves left, then game is over
@@ -130,11 +143,6 @@ class GameState:
                 self.game_over = True
 
             self.append_game_state()
-            # TODO investigate the "Failed to create the menu window" error... from tkinter?\
-            # to repro: seems to occur deep into the game. memory leak/stack overflow issue?
-            # after around 500-600 turns in the same window, tkinter starts freezing up and a tile
-            # starts appearing the in top-left corner of the screen (seems like the game state is still updating in the background, though)
-
 
     def moves_available(self):
         # returns a list containing the valid movement directions from ["Up", "Down", "Left", "Right"]
