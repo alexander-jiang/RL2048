@@ -118,13 +118,13 @@ class GameWindow(tk.Frame):
         self.master.bind('<Right>', self.move)
 
         self.game_state.new_game()
-        print(f"Started a new game! Saving to {self.game_state.game_filename}")
         self.draw_game_tiles()
         self.draw_score()
 
     def load_game(self):
         fname = filedialog.askopenfilename(filetypes=(("CSV files", "*.csv"),))
         if fname:
+            # TODO add instructions to the GUI?
             self.master.unbind('<Up>')
             self.master.unbind('<Down>')
             self.master.bind('<Left>', self.decrement_turn_number)
@@ -133,7 +133,7 @@ class GameWindow(tk.Frame):
             with open(fname, 'r') as game_file:
                 self.game_states = game_file.readlines()
                 self.turn_number = 0
-                self.load_game_state()
+            self.load_game_state()
 
     def load_game_state(self):
         self.game_state = GameState()

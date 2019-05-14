@@ -20,26 +20,28 @@ class GameState:
         self.score = 0
         self.game_over = False
 
-    def new_game(self, random_seed=None):
+    def new_game(self, random_seed=None, save_game=True, game_dir=GAME_FILES_DIR):
         self.reset_state()
 
         if random_seed is None:
-            self.random_seed = random.getrandbits(16)
+            random_seed = random.getrandbits(16)
+
+        self.rand_gen = random.Random(random_seed)
+
+        self.spawn_tile()
+        self.spawn_tile()
+
+        if save_game:
+            self.game_filename = os.path.join(game_dir, datetime.now().strftime(f"%Y-%m-%d-%H-%M-%S_{random_seed}.csv"))
+            if not os.path.isdir(game_dir):
+                os.mkdir(game_dir)
+            self.append_game_state()
+            print(f"Started a new game! Saving to {self.game_filename}")
         else:
-            self.random_seed = random_seed
-        random.seed(self.random_seed)
-
-        self.spawn_tile()
-        self.spawn_tile()
-
-        self.game_filename = os.path.join(GAME_FILES_DIR, datetime.now().strftime(f"%Y-%m-%d-%H-%M-%S_{self.random_seed}.csv"))
-        self.append_game_state()
+            self.game_filename = None
+            print("Started a new game! Not saving the game to a file...")
 
     def append_game_state(self):
-        assert self.game_filename is not None
-        if not os.path.isdir(GAME_FILES_DIR):
-            os.mkdir(GAME_FILES_DIR)
-
         with open(self.game_filename, 'a') as game_file:
             game_file.write(f"{self.game_over},{self.score},")
             for i in range(NUM_ROWS):
@@ -50,10 +52,6 @@ class GameState:
                     game_file.write(f"{self.tiles[i][j]},")
 
     def append_game_action(self, dir):
-        assert self.game_filename is not None
-        if not os.path.isdir(GAME_FILES_DIR):
-            os.mkdir(GAME_FILES_DIR)
-
         with open(self.game_filename, 'a') as game_file:
             game_file.write(f"{dir}\n")
 
@@ -209,8 +207,8 @@ class GameState:
             for j in range(NUM_COLS):
                 if self.tiles[i][j] == 0:
                     empty_tile_locs.append((i, j))
-        idx = random.randrange(len(empty_tile_locs))
-        sample = random.random()
+        idx = self.rand_gen.randrange(len(empty_tile_locs))
+        sample = self.rand_gen.random()
         if sample < 0.9:
             new_tile = 1 # remember that the values in the tile array are log2
         else:

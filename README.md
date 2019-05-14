@@ -10,7 +10,11 @@ Reinforcement learning model to play the 2048 game.
 - Actions: the 4 directions
 
 TODO:
-- implement recorder to document each session
-  - save game state by encoding each turn as a comma-separated line?
+- set up bot class (needs to interact with the game engine, but not necessarily with the GUI)
 - build naive bots (e.g. random moves, or top-left biased random moves) for comparison/prototyping
+  - how many turns to get to first 64-tile? to first 128-tile? etc.
+  - average number of tiles per turn? average tile value per turn?
+  - average weight of duplicated tiles per turn?
+  - score vs. turn number?
+  - distribution of actions taken per game
 - implement RL model (Q-learning)
