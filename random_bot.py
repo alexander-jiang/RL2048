@@ -1,4 +1,5 @@
 from abstract_bot import AbstractBot
+import argparse
 import random
 
 class RandomBot(AbstractBot):
@@ -34,7 +35,10 @@ class RandomBot(AbstractBot):
         return dir_list[dir_idx]
 
 def main():
-    for i in range(100):
+    parser = argparse.ArgumentParser(description='Play N games using the random bot.')
+    parser.add_argument('-n', '--num_games', type=int, default=1, help='number of games (default: 1)')
+    args = parser.parse_args()
+    for i in range(args.num_games):
         rand_bot = RandomBot()
         rand_bot.play_game()
 
