@@ -37,9 +37,10 @@ class RandomBot(AbstractBot):
 def main():
     parser = argparse.ArgumentParser(description='Play N games using the random bot.')
     parser.add_argument('-n', '--num_games', type=int, default=1, help='number of games (default: 1)')
+    parser.add_argument('-d', '--game_dir', type=str, default='random_bot_games', help='directory to save the games to (default: random_bot_games)')
     args = parser.parse_args()
     for i in range(args.num_games):
         rand_bot = RandomBot()
-        rand_bot.play_game()
+        rand_bot.play_game(game_dir=args.game_dir)
 
 if __name__ == "__main__": main()
