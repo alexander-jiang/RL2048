@@ -27,7 +27,13 @@ class GameState:
             tiles[tile_idx // 4][tile_idx % 4] = int(tokens[token_idx])
         return class_obj(tiles=tiles, score=score, game_over=game_over)
 
-    ## TODO add helper methods to determine the max-valued tile, etc.
+    def max_tile_value(self):
+        max_tile = 0
+        for i in range(NUM_ROWS):
+            for j in range(NUM_COLS):
+                if self.tiles[i][j] > max_tile:
+                    max_tile = self.tiles[i][j]
+        return 1 << max_tile
 
     def reset_state(self):
         self.tiles = [[0] * 4 for i in range(4)]
