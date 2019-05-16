@@ -21,14 +21,11 @@ def main():
 
         with open(filepath, 'r') as f:
             lines = f.readlines()
-            last_line = lines[-1]
-            tokens = last_line.split(',')
-            game_over = tokens[0]
-            score = tokens[1]
-            if not game_over:
+            final_game_state = GameState.from_csv_line(lines[-1])
+            if not final_game_state.game_over:
                 print(f"Game not over for {filepath}")
                 continue
-            scores.append(score)
+            scores.append(final_game_state.score)
             game_lens.append(len(lines))
     scores = np.array(scores, dtype=np.uint)
     game_lens = np.array(game_lens, dtype=np.uint)

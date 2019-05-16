@@ -19,13 +19,12 @@ tile_bkgrd_color = {
 }
 
 class GameTiles(tk.Frame):
-    def __init__(self, game_state, master=None):
+    def __init__(self, master=None):
         super().__init__(master, bd=1, relief=tk.SOLID)
         self.master = master
         for i in range(4):
             self.rowconfigure(i, minsize=100)
             self.columnconfigure(i, minsize=100)
-        self.game_state = game_state
         self.tiles = [
             [tk.Label(
                 self, anchor=tk.CENTER,
@@ -52,24 +51,23 @@ class GameTiles(tk.Frame):
             for j in range(4):
                 self.tiles[i][j].grid(row=i, column=j, sticky=tk.N+tk.S+tk.W+tk.E)
         self.grid()
-        self.draw_tiles()
 
-    def draw_tiles(self):
+    def draw_tiles(self, game_state):
         for i in range(4):
             for j in range(4):
-                if self.game_state.tiles[i][j] > 0:
-                    value = 1 << self.game_state.tiles[i][j]
+                if game_state.tiles[i][j] > 0:
+                    value = 1 << game_state.tiles[i][j]
                     text = f"{value}"
                 else:
                     text = ""
 
                 # different tile background/text color for different valued tiles
-                if self.game_state.tiles[i][j] > 12:
+                if game_state.tiles[i][j] > 12:
                     bg_color = '#3c3a32'
                 else:
-                    bg_color = tile_bkgrd_color[self.game_state.tiles[i][j]]
+                    bg_color = tile_bkgrd_color[game_state.tiles[i][j]]
 
-                if self.game_state.tiles[i][j] > 2:
+                if game_state.tiles[i][j] > 2:
                     text_color = "#f9f6f2"
                 else:
                     text_color = "#776e65"
@@ -87,7 +85,7 @@ class GameWindow(tk.Frame):
 
     def create_widgets(self):
         self.game_state = GameState()
-        self.game_tiles = GameTiles(self.game_state, master=self)
+        self.game_tiles = GameTiles(master=self)
         self.draw_game_tiles()
         self.game_tiles.grid()
 
@@ -106,7 +104,7 @@ class GameWindow(tk.Frame):
         self.quit.grid()
 
     def draw_game_tiles(self):
-        self.game_tiles.draw_tiles()
+        self.game_tiles.draw_tiles(self.game_state)
 
     def draw_score(self):
         self.score_strvar.set(f"Score: {self.game_state.score}")
@@ -136,16 +134,11 @@ class GameWindow(tk.Frame):
             self.load_game_state()
 
     def load_game_state(self):
-        self.game_state = GameState()
-
         print(f"turn number = {self.turn_number}")
-        tokens = self.game_states[self.turn_number].split(',')
-        self.game_state.game_over = tokens[0]
-        self.game_state.score = tokens[1]
-        for i in range(2, 18):
-            k = i - 2
-            self.game_state.tiles[k // 4][k % 4] = int(tokens[i])
-        print(f"action from this state: {tokens[-1].strip()}")
+        self.game_state = GameState.from_csv_line(self.game_states[self.turn_number])
+
+        next_action = self.game_states[self.turn_number].split(',')[-1].strip()
+        print(f"action from this state: {next_action}")
 
         self.draw_game_tiles()
         self.draw_score()

@@ -15,6 +15,20 @@ class GameState:
         self.score = score
         self.game_over = game_over
 
+    ## constructor that takes in a line from the game file csv
+    @classmethod
+    def from_csv_line(class_obj, line):
+        tokens = line.split(',')
+        game_over = tokens[0] == "True"
+        score = int(tokens[1])
+        tiles = [[0] * 4 for i in range(4)]
+        for token_idx in range(2, 18):
+            tile_idx = token_idx - 2
+            tiles[tile_idx // 4][tile_idx % 4] = int(tokens[token_idx])
+        return class_obj(tiles=tiles, score=score, game_over=game_over)
+
+    ## TODO add helper methods to determine the max-valued tile, etc.
+
     def reset_state(self):
         self.tiles = [[0] * 4 for i in range(4)]
         self.score = 0
