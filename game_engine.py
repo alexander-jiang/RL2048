@@ -35,6 +35,35 @@ class GameState:
                     max_tile = self.tiles[i][j]
         return 1 << max_tile
 
+    def avg_tile_value(self):
+        tile_total = 0
+        for i in range(NUM_ROWS):
+            for j in range(NUM_COLS):
+                if self.tiles[i][j] > 0:
+                    tile_total += 1 << self.tiles[i][j]
+        return tile_total / (NUM_ROWS * NUM_COLS)
+
+    def num_tiles(self):
+        tile_total = 0
+        for i in range(NUM_ROWS):
+            for j in range(NUM_COLS):
+                if self.tiles[i][j] > 0:
+                    tile_total += 1
+        return tile_total
+
+    def duplicated_tile_values(self):
+        tile_counts = {}
+        duplicated_total = 0
+        for i in range(NUM_ROWS):
+            for j in range(NUM_COLS):
+                if self.tiles[i][j] > 0:
+                    if self.tiles[i][j] not in tile_counts:
+                        tile_counts[self.tiles[i][j]] = 0
+                    else:
+                        duplicated_total += self.tiles[i][j]
+                    tile_counts[self.tiles[i][j]] += 1
+        return duplicated_total
+
     def reset_state(self):
         self.tiles = [[0] * 4 for i in range(4)]
         self.score = 0

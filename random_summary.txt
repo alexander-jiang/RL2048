@@ -1,0 +1,12 @@
+max in scores = 3172
+max score filename = random_bot_games\2019-05-14-23-20-41_18464.csv
+min in scores = 204
+min score filename = random_bot_games\2019-05-14-23-22-17_17864.csv
+mean in scores = 1099.156
+median in scores = 1050.0
+max in game_lens = 266
+longest game filename = random_bot_games\2019-05-14-23-20-41_18464.csv
+min in game_lens = 46
+shortest game filename = random_bot_games\2019-05-14-23-09-27_6117.csv
+mean in game_lens = 119.758
+median in game_lens = 117.0

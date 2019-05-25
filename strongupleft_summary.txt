@@ -1,0 +1,12 @@
+max in scores = 7136
+max score filename = strong_up_left_games\2019-05-16-18-45-38_27746.csv
+min in scores = 348
+min score filename = strong_up_left_games\2019-05-16-19-00-24_3133.csv
+mean in scores = 1858.468
+median in scores = 1616.0
+max in game_lens = 491
+longest game filename = strong_up_left_games\2019-05-16-18-45-38_27746.csv
+min in game_lens = 61
+shortest game filename = strong_up_left_games\2019-05-16-18-48-11_65028.csv
+mean in game_lens = 175.758
+median in game_lens = 165.0

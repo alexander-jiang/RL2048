@@ -1,0 +1,12 @@
+max in scores = 3132
+max score filename = up_left_games\2019-05-16-12-04-51_59445.csv
+min in scores = 196
+min score filename = up_left_games\2019-05-16-12-23-45_7346.csv
+mean in scores = 1165.18
+median in scores = 1116.0
+max in game_lens = 257
+longest game filename = up_left_games\2019-05-16-12-04-51_59445.csv
+min in game_lens = 45
+shortest game filename = up_left_games\2019-05-16-12-01-11_30594.csv
+mean in game_lens = 125.327
+median in game_lens = 122.0

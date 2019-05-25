@@ -1,2 +1,7 @@
 *.pyc
 geckodriver.log
+.ipynb_checkpoints/
+games/
+random_bot_games/
+up_left_games/
+strong_up_left_games/
