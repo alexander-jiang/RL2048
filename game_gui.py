@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import filedialog
-from game_engine import GameState
+from game_engine import Game, GameState
 
 tile_bkgrd_color = {
     0: "#cdc1b4",
@@ -52,22 +52,22 @@ class GameTiles(tk.Frame):
                 self.tiles[i][j].grid(row=i, column=j, sticky=tk.N+tk.S+tk.W+tk.E)
         self.grid()
 
-    def draw_tiles(self, game_state):
+    def draw_tiles(self, game):
         for i in range(4):
             for j in range(4):
-                if game_state.tiles[i][j] > 0:
-                    value = 1 << game_state.tiles[i][j]
+                if game.state.tiles[i][j] > 0:
+                    value = 1 << game.state.tiles[i][j]
                     text = f"{value}"
                 else:
                     text = ""
 
                 # different tile background/text color for different valued tiles
-                if game_state.tiles[i][j] > 12:
+                if game.state.tiles[i][j] > 12:
                     bg_color = '#3c3a32'
                 else:
-                    bg_color = tile_bkgrd_color[game_state.tiles[i][j]]
+                    bg_color = tile_bkgrd_color[game.state.tiles[i][j]]
 
-                if game_state.tiles[i][j] > 2:
+                if game.state.tiles[i][j] > 2:
                     text_color = "#f9f6f2"
                 else:
                     text_color = "#776e65"
@@ -84,7 +84,7 @@ class GameWindow(tk.Frame):
         self.create_widgets()
 
     def create_widgets(self):
-        self.game_state = GameState()
+        self.game = Game()
         self.game_tiles = GameTiles(master=self)
         self.draw_game_tiles()
         self.game_tiles.grid()
@@ -104,10 +104,10 @@ class GameWindow(tk.Frame):
         self.quit.grid()
 
     def draw_game_tiles(self):
-        self.game_tiles.draw_tiles(self.game_state)
+        self.game_tiles.draw_tiles(self.game)
 
     def draw_score(self):
-        self.score_strvar.set(f"Score: {self.game_state.score}")
+        self.score_strvar.set(f"Score: {self.game.state.score}")
 
     def new_game(self):
         self.master.bind('<Up>', self.move)
@@ -115,7 +115,7 @@ class GameWindow(tk.Frame):
         self.master.bind('<Left>', self.move)
         self.master.bind('<Right>', self.move)
 
-        self.game_state.new_game()
+        self.game.new_game()
         self.draw_game_tiles()
         self.draw_score()
 
@@ -135,7 +135,7 @@ class GameWindow(tk.Frame):
 
     def load_game_state(self):
         print(f"turn number = {self.turn_number}")
-        self.game_state = GameState.from_csv_line(self.game_states[self.turn_number])
+        self.game.state = GameState.from_csv_line(self.game_states[self.turn_number])
 
         next_action = self.game_states[self.turn_number].split(',')[-1].strip()
         print(f"action from this state: {next_action}")
@@ -155,14 +155,14 @@ class GameWindow(tk.Frame):
 
     def move(self, event):
         print(f"moving in dir {event.keysym}")
-        self.game_state.move_tiles(event.keysym)
+        self.game.move(event.keysym)
         self.draw_game_tiles()
         self.draw_score()
-        if self.game_state.game_over:
+        if self.game.state.game_over:
             # TODO display a message on GUI
             print("Game over! no moves available")
         # else:
-            # print(f"moves available: {self.game_state.moves_available()}")
+            # print(f"moves available: {self.game.state.moves_available()}")
 
 root = tk.Tk()
 root.geometry("500x600")

@@ -7,46 +7,51 @@ NUM_COLS = 4
 GAME_FILES_DIR = 'games'
 
 class GameState:
-    def __init__(self, tiles=[[0] * 4 for i in range(4)], score=0, game_over=False):
-        assert len(tiles) == NUM_ROWS
-        assert len(tiles[0]) == NUM_COLS
+    def __init__(self, nrows=NUM_ROWS, ncols=NUM_COLS, tiles=[[0] * NUM_COLS for i in range(NUM_ROWS)], score=0, game_over=False):
+        assert len(tiles) == nrows
+        assert len(tiles[0]) == ncols
         assert score >= 0
+        self.nrows = nrows
+        self.ncols = ncols
         self.tiles = tiles
         self.score = score
         self.game_over = game_over
 
+    def copy(self):
+        return GameState(nrows=self.nrows, ncols=self.ncols, tiles=self.tiles, score=self.score, game_over=self.game_over)
+
     ## constructor that takes in a line from the game file csv
     @classmethod
-    def from_csv_line(class_obj, line):
+    def from_csv_line(class_obj, line, nrows=NUM_ROWS, ncols=NUM_COLS):
         tokens = line.split(',')
         game_over = tokens[0] == "True"
         score = int(tokens[1])
-        tiles = [[0] * 4 for i in range(4)]
-        for token_idx in range(2, 18):
+        tiles = [[0] * ncols for i in range(nrows)]
+        for token_idx in range(2, 2 + nrows * ncols):
             tile_idx = token_idx - 2
-            tiles[tile_idx // 4][tile_idx % 4] = int(tokens[token_idx])
+            tiles[tile_idx // ncols][tile_idx % ncols] = int(tokens[token_idx])
         return class_obj(tiles=tiles, score=score, game_over=game_over)
 
     def max_tile_value(self):
         max_tile = 0
-        for i in range(NUM_ROWS):
-            for j in range(NUM_COLS):
+        for i in range(self.nrows):
+            for j in range(self.ncols):
                 if self.tiles[i][j] > max_tile:
                     max_tile = self.tiles[i][j]
         return 1 << max_tile
 
     def avg_tile_value(self):
         tile_total = 0
-        for i in range(NUM_ROWS):
-            for j in range(NUM_COLS):
+        for i in range(self.nrows):
+            for j in range(self.ncols):
                 if self.tiles[i][j] > 0:
                     tile_total += 1 << self.tiles[i][j]
-        return tile_total / (NUM_ROWS * NUM_COLS)
+        return tile_total / (self.nrows * self.ncols)
 
     def num_tiles(self):
         tile_total = 0
-        for i in range(NUM_ROWS):
-            for j in range(NUM_COLS):
+        for i in range(self.nrows):
+            for j in range(self.ncols):
                 if self.tiles[i][j] > 0:
                     tile_total += 1
         return tile_total
@@ -54,8 +59,8 @@ class GameState:
     def duplicated_tile_values(self):
         tile_counts = {}
         duplicated_total = 0
-        for i in range(NUM_ROWS):
-            for j in range(NUM_COLS):
+        for i in range(self.nrows):
+            for j in range(self.ncols):
                 if self.tiles[i][j] > 0:
                     if self.tiles[i][j] not in tile_counts:
                         tile_counts[self.tiles[i][j]] = 0
@@ -64,45 +69,10 @@ class GameState:
                     tile_counts[self.tiles[i][j]] += 1
         return duplicated_total
 
-    def reset_state(self):
-        self.tiles = [[0] * 4 for i in range(4)]
+    def reset_state(self, nrows=NUM_ROWS, ncols=NUM_COLS):
+        self.tiles = [[0] * ncols for i in range(nrows)]
         self.score = 0
         self.game_over = False
-
-    def new_game(self, random_seed=None, save_game=True, game_dir=GAME_FILES_DIR):
-        self.reset_state()
-
-        if random_seed is None:
-            random_seed = random.getrandbits(16)
-
-        self.rand_gen = random.Random(random_seed)
-
-        self.spawn_tile()
-        self.spawn_tile()
-
-        if save_game:
-            self.game_filename = os.path.join(game_dir, datetime.now().strftime(f"%Y-%m-%d-%H-%M-%S_{random_seed}.csv"))
-            if not os.path.isdir(game_dir):
-                os.mkdir(game_dir)
-            self.append_game_state()
-            print(f"Started a new game! Saving to {self.game_filename}")
-        else:
-            self.game_filename = None
-            print("Started a new game! Not saving the game to a file...")
-
-    def append_game_state(self):
-        with open(self.game_filename, 'a') as game_file:
-            game_file.write(f"{self.game_over},{self.score},")
-            for i in range(NUM_ROWS):
-                for j in range(NUM_COLS):
-                    # if i == NUM_ROWS - 1 and j == NUM_COLS - 1:
-                    #     game_file.write(f"{self.tiles[i][j]}\n")
-                    # else:
-                    game_file.write(f"{self.tiles[i][j]},")
-
-    def append_game_action(self, dir):
-        with open(self.game_filename, 'a') as game_file:
-            game_file.write(f"{dir}\n")
 
     def move_tiles(self, dir):
         if self.game_over:
@@ -112,26 +82,24 @@ class GameState:
         # dir is either "Up", "Down", "Left", or "Right"
         assert dir in ["Up", "Down", "Left", "Right"]
 
-        available_moves = self.moves_available()
-
         # contains coordinates from rows or columns, ordered based on direction (e.g. if
         # dir is Up, then the groups contains the columns ordered from top-to-bottom)
         groups = []
         if dir == "Up":
-            for j in range(NUM_COLS):
-                column = [(i, j) for i in range(NUM_ROWS)]
+            for j in range(self.ncols):
+                column = [(i, j) for i in range(self.nrows)]
                 groups.append(column)
         elif dir == "Down":
-            for j in range(0, NUM_COLS):
-                column = [(i, j) for i in reversed(range(0, NUM_ROWS))]
+            for j in range(0, self.ncols):
+                column = [(i, j) for i in reversed(range(0, self.nrows))]
                 groups.append(column)
         elif dir == "Left":
-            for i in range(NUM_ROWS):
-                row = [(i, j) for j in range(NUM_COLS)]
+            for i in range(self.nrows):
+                row = [(i, j) for j in range(self.ncols)]
                 groups.append(row)
         elif dir == "Right":
-            for i in range(NUM_ROWS):
-                row = [(i, j) for j in reversed(range(0, NUM_COLS))]
+            for i in range(self.nrows):
+                row = [(i, j) for j in reversed(range(0, self.ncols))]
                 groups.append(row)
         else:
             print(f"ERROR Invalid direction {dir}!")
@@ -178,26 +146,15 @@ class GameState:
                             moved_any = True
                         else:
                             last_tile_idx = idx
-
-        if moved_any:
-            assert dir in available_moves
-            self.append_game_action(dir)
-
-            self.spawn_tile()
-
-            # if there are no valid moves left, then game is over
-            if not self.moves_available():
-                self.game_over = True
-
-            self.append_game_state()
+        return moved_any
 
     def moves_available(self):
         # returns a list containing the valid movement directions from ["Up", "Down", "Left", "Right"]
         dirs = set([])
         up = False
         down = False
-        for j in range(NUM_COLS):
-            column = [(i, j) for i in range(NUM_ROWS)]
+        for j in range(self.ncols):
+            column = [(i, j) for i in range(self.nrows)]
             prev_val = None
             for coord_idx in range(len(column)):
                 i, j = column[coord_idx]
@@ -222,8 +179,8 @@ class GameState:
 
         left = False
         right = False
-        for i in range(NUM_ROWS):
-            row = [(i, j) for j in range(NUM_COLS)]
+        for i in range(self.nrows):
+            row = [(i, j) for j in range(self.ncols)]
             prev_val = None
             for coord_idx in range(len(row)):
                 i, j = row[coord_idx]
@@ -250,17 +207,73 @@ class GameState:
                 break
         return dirs
 
-    def spawn_tile(self):
+    def spawn_tile(self, rand_gen):
         empty_tile_locs = []
-        for i in range(NUM_ROWS):
-            for j in range(NUM_COLS):
+        for i in range(self.nrows):
+            for j in range(self.ncols):
                 if self.tiles[i][j] == 0:
                     empty_tile_locs.append((i, j))
-        idx = self.rand_gen.randrange(len(empty_tile_locs))
-        sample = self.rand_gen.random()
+        idx = rand_gen.randrange(len(empty_tile_locs))
+        sample = rand_gen.random()
         if sample < 0.9:
             new_tile = 1 # remember that the values in the tile array are log2
         else:
             new_tile = 2
         i, j = empty_tile_locs[idx]
         self.tiles[i][j] = new_tile
+
+class Game:
+    def __init__(self, game_state=None):
+        if game_state is None:
+            self.state = GameState()
+
+    def new_game(self, random_seed=None, save_game=True, game_dir=GAME_FILES_DIR):
+        self.state.reset_state()
+
+        if random_seed is None:
+            random_seed = random.getrandbits(16)
+
+        self.rand_gen = random.Random(random_seed)
+
+        self.state.spawn_tile(self.rand_gen)
+        self.state.spawn_tile(self.rand_gen)
+
+        if save_game:
+            self.game_filename = os.path.join(game_dir, datetime.now().strftime(f"%Y-%m-%d-%H-%M-%S_{random_seed}.csv"))
+            if not os.path.isdir(game_dir):
+                os.mkdir(game_dir)
+            self.append_game_state()
+            print(f"Started a new game! Saving to {self.game_filename}")
+        else:
+            self.game_filename = None
+            print("Started a new game! Not saving the game to a file...")
+
+    def append_game_state(self):
+        with open(self.game_filename, 'a') as game_file:
+            game_file.write(f"{self.state.game_over},{self.state.score},")
+            for i in range(self.state.nrows):
+                for j in range(self.state.ncols):
+                    # if i == self.state.nrows - 1 and j == self.state.ncols - 1:
+                    #     game_file.write(f"{self.state.tiles[i][j]}\n")
+                    # else:
+                    game_file.write(f"{self.state.tiles[i][j]},")
+
+    def append_game_action(self, dir):
+        with open(self.game_filename, 'a') as game_file:
+            game_file.write(f"{dir}\n")
+
+    def move(self, dir):
+        available_moves = self.state.moves_available()
+        moved_any = self.state.move_tiles(dir)
+
+        if moved_any:
+            assert dir in available_moves
+            self.append_game_action(dir)
+
+            self.state.spawn_tile(self.rand_gen)
+
+            # if there are no valid moves left, then game is over
+            if not self.state.moves_available():
+                self.state.game_over = True
+
+            self.append_game_state()
