@@ -18,7 +18,7 @@ class GameState:
         self.game_over = game_over
 
     def copy(self):
-        return GameState(nrows=self.nrows, ncols=self.ncols, tiles=self.tiles, score=self.score, game_over=self.game_over)
+        return GameState(nrows=self.nrows, ncols=self.ncols, tiles=[row.copy() for row in self.tiles], score=self.score, game_over=self.game_over)
 
     ## constructor that takes in a line from the game file csv
     @classmethod
@@ -207,7 +207,8 @@ class GameState:
                 break
         return dirs
 
-    def spawn_tile(self, rand_gen):
+    def spawn_tile(self, rand_gen, prob_two_tile=0.9):
+        # prob_two_tile is the probability that a 2-tile is spawned (otherwise, a 4-tile is spawned)
         empty_tile_locs = []
         for i in range(self.nrows):
             for j in range(self.ncols):
@@ -215,12 +216,34 @@ class GameState:
                     empty_tile_locs.append((i, j))
         idx = rand_gen.randrange(len(empty_tile_locs))
         sample = rand_gen.random()
-        if sample < 0.9:
+        if sample < prob_two_tile:
             new_tile = 1 # remember that the values in the tile array are log2
         else:
             new_tile = 2
         i, j = empty_tile_locs[idx]
         self.tiles[i][j] = new_tile
+
+    def successor_states(self, only_two_tile=False):
+        successors = []
+        moves = self.moves_available()
+        # print(moves)
+        for move in moves:
+            new_state = self.copy()
+            moved_any = new_state.move_tiles(move)
+            assert moved_any
+            for i in range(new_state.nrows):
+                for j in range(new_state.ncols):
+                    if new_state.tiles[i][j] == 0:
+                        successor = new_state.copy()
+                        successor.tiles[i][j] = 1
+                        # print(f"before spawning: {new_state.tiles}")
+                        # print(f"after spawning: {successor.tiles}")
+                        successors.append(successor)
+                        if not only_two_tile:
+                            successor2 = new_state.copy()
+                            successor2.tiles[i][j] = 2
+                            successors.append(successor2)
+        return successors
 
 class Game:
     def __init__(self, game_state=None):
