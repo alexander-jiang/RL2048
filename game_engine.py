@@ -32,6 +32,20 @@ class GameState:
             tiles[tile_idx // ncols][tile_idx % ncols] = int(tokens[token_idx])
         return class_obj(tiles=tiles, score=score, game_over=game_over)
 
+    def __eq__(self, other):
+        if not isinstance(other, GameState):
+            return False
+
+        if self.nrows != other.nrows or self.ncols != other.ncols:
+            return False
+        if self.score != other.score or self.game_over != other.game_over:
+            return False
+        for i in range(self.nrows):
+            for j in range(self.ncols):
+                if self.tiles[i][j] != other.tiles[i][j]:
+                    return False
+        return True
+
     def max_tile_value(self):
         max_tile = 0
         for i in range(self.nrows):
@@ -55,6 +69,9 @@ class GameState:
                 if self.tiles[i][j] > 0:
                     tile_total += 1
         return tile_total
+
+    def num_empty_tiles(self):
+        return self.nrows * self.ncols - self.num_tiles()
 
     def duplicated_tile_values(self):
         tile_counts = {}
@@ -223,26 +240,27 @@ class GameState:
         i, j = empty_tile_locs[idx]
         self.tiles[i][j] = new_tile
 
-    def successor_states(self, only_two_tile=False):
+    def successor_states(self, move_dir, prob_two_tile=0.9):
         successors = []
-        moves = self.moves_available()
-        # print(moves)
-        for move in moves:
-            new_state = self.copy()
-            moved_any = new_state.move_tiles(move)
-            assert moved_any
-            for i in range(new_state.nrows):
-                for j in range(new_state.ncols):
-                    if new_state.tiles[i][j] == 0:
-                        successor = new_state.copy()
-                        successor.tiles[i][j] = 1
-                        # print(f"before spawning: {new_state.tiles}")
-                        # print(f"after spawning: {successor.tiles}")
-                        successors.append(successor)
-                        if not only_two_tile:
-                            successor2 = new_state.copy()
-                            successor2.tiles[i][j] = 2
-                            successors.append(successor2)
+        new_state = self.copy()
+        moved_any = new_state.move_tiles(move_dir)
+        assert moved_any
+        reward = new_state.score - self.score
+        num_empty_tiles = new_state.num_empty_tiles()
+        for i in range(new_state.nrows):
+            for j in range(new_state.ncols):
+                if new_state.tiles[i][j] == 0:
+                    successor = new_state.copy()
+                    successor.tiles[i][j] = 1
+                    # print(f"before spawning: {new_state.tiles}")
+                    # print(f"after spawning: {successor.tiles}")
+                    transition_prob = 1.0 / num_empty_tiles
+                    successors.append((transition_prob * prob_two_tile, successor, reward))
+
+                    if prob_two_tile < 1.0:
+                        successor2 = new_state.copy()
+                        successor2.tiles[i][j] = 2
+                        successors.append((transition_prob * (1.0 - prob_two_tile), successor2, reward))
         return successors
 
 class Game:
