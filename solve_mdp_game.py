@@ -1,3 +1,4 @@
+import argparse
 import random
 from game_engine import GameState
 
@@ -5,13 +6,23 @@ def print_state(state):
     print(state.tiles)
 
 def main():
-    # BFS search to generate list of all possible states in the one-row game
-    num_rows = 2
-    num_cols = 2
+    parser = argparse.ArgumentParser(description='Build and solve an MDP that models an NxM game of 2048 (using value iteration).')
+    parser.add_argument('-r', '--num_rows', type=int, default=2,
+        help='number of rows (default: 2)')
+    parser.add_argument('-c', '--num_cols', type=int, default=2,
+        help='number of rows (default: 2)')
+    parser.add_argument('-p', '--two_tile_prob', type=float, default=1.0,
+        help='probability of spawning a 2-tile (instead of a 4-tile) after a successful move')
+    args = parser.parse_args()
+
+    num_rows = args.num_rows
+    num_cols = args.num_cols
     frontier = []
     visited = []
-    TWO_TILE_PROB = 1.0 # probability of spawning a 2-tile (vs a 4-tile) after a successful move
+    TWO_TILE_PROB = args.two_tile_prob
     output_filename = f"mdp_{num_rows}x{num_cols}_prob{TWO_TILE_PROB}.txt"
+
+    # BFS search to generate list of all possible states in the one-row game
 
     # initialize the possible starting states
     for i in range(num_rows):

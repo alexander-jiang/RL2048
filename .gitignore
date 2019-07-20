@@ -1,4 +1,5 @@
 *.pyc
+*.pdf
 geckodriver.log
 .ipynb_checkpoints/
 games/
