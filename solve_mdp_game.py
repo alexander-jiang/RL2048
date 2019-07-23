@@ -1,9 +1,35 @@
 import argparse
 import random
 from game_engine import GameState
+import networkx as nx
+import matplotlib.pyplot as plt
+
+# import the graphviz_layout function
+# I went through a lot to get this to work:
+# first, having graphviz 2.38 already installed to C:\Program Files (x86)\Graphviz2.38,
+# I added the Graphviz2.38/bin folder to the PATH. Then installing pygraphviz was a pain, and
+# I ended up using a user's installer, suggested by:
+# https://github.com/pygraphviz/pygraphviz/issues/186#issuecomment-490319757
+# and finally when I got an error "dot format not recognized", I found this:
+# https://github.com/pygraphviz/pygraphviz/issues/97
+# and replaced the dot.exe file (Graphviz version 2.41) in my Anaconda3/Scripts
+# folder with the dot.exe file from my Graphviz 2.38 installation (the one on my
+# PATH), which got the code below to work
+try:
+    import pygraphviz
+    from networkx.drawing.nx_agraph import graphviz_layout
+except ImportError:
+    raise ImportError("This example needs Graphviz and PyGraphviz "
+        "(I tested on Windows with python 3.7.3 and pygraphviz 1.5 "
+        "from alubbock, see comments in source code)")
+
 
 def print_state(state):
     print(state.tiles)
+
+def state_to_string(state):
+    return str(state.tiles)
+
 
 def main():
     parser = argparse.ArgumentParser(description='Build and solve an MDP that models an NxM game of 2048 (using value iteration).')
@@ -23,13 +49,16 @@ def main():
     output_filename = f"mdp_{num_rows}x{num_cols}_prob{TWO_TILE_PROB}.txt"
 
     # BFS search to generate list of all possible states in the one-row game
+    states_graph = nx.DiGraph()
 
     # initialize the possible starting states
     for i in range(num_rows):
         for j in range(num_cols):
             tiles = [[0] * num_cols for r in range(num_rows)]
             tiles[i][j] = 1
-            frontier.append(GameState(nrows=num_rows, ncols=num_cols, tiles=tiles, score=0, game_over=False))
+            new_state = GameState(nrows=num_rows, ncols=num_cols, tiles=tiles, score=0, game_over=False)
+            frontier.append(new_state)
+            states_graph.add_node(state_to_string(new_state))
 
     # perform BFS search to enumerate all states
     while len(frontier) > 0:
@@ -39,6 +68,7 @@ def main():
         # print(f"popped state: {state.tiles}")
 
         visited.append(state)
+        states_graph.add_node(state_to_string(state))
 
         for move in state.moves_available():
             successors = state.successor_states(move, prob_two_tile=TWO_TILE_PROB)
@@ -48,11 +78,25 @@ def main():
                 # print(f"{state.tiles} -> {move} -> {successor.tiles} (prob {probability}, reward {reward})")
                 frontier.append(successor)
 
+                states_graph.add_edge(state_to_string(state), state_to_string(successor))
+
     # print all states
     all_states = visited
     for state in all_states:
         print(state.tiles)
     print(f"num states: {len(all_states)}")
+
+    # save graph of states to Graphviz dot format
+    nx.drawing.nx_agraph.write_dot(states_graph, f"states_graph_dot_{num_rows}x{num_cols}_prob{TWO_TILE_PROB}")
+
+    # draw the graph of states
+    pos = graphviz_layout(states_graph, prog="dot") # "dot" is good for directed graphs
+    # nx.draw_networkx_nodes(states_graph, pos, node_size=100)
+    # nx.draw_networkx_edges(states_graph, pos)
+    # nx.draw_networkx_labels(states_graph, pos, font_size=10)
+    plt.figure(figsize=(12, 15))
+    nx.draw(states_graph, pos, with_labels=True, node_size=200, font_size=10)
+    plt.savefig(f"states_graph_{num_rows}x{num_cols}_prob{TWO_TILE_PROB}.png")
 
 
     # value iteration on the MDP
