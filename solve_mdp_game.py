@@ -49,7 +49,7 @@ def main():
     output_filename = f"mdp_{num_rows}x{num_cols}_prob{TWO_TILE_PROB}.txt"
 
     # BFS search to generate list of all possible states in the one-row game
-    states_graph = nx.DiGraph()
+    states_graph = nx.DiGraph(num_rows=num_rows, num_cols=num_cols, two_tile_prob=TWO_TILE_PROB)
 
     # initialize the possible starting states
     for i in range(num_rows):
@@ -86,18 +86,6 @@ def main():
         print(state.tiles)
     print(f"num states: {len(all_states)}")
 
-    # save graph of states to Graphviz dot format
-    nx.drawing.nx_agraph.write_dot(states_graph, f"states_graph_dot_{num_rows}x{num_cols}_prob{TWO_TILE_PROB}")
-
-    # draw the graph of states
-    pos = graphviz_layout(states_graph, prog="dot") # "dot" is good for directed graphs
-    # nx.draw_networkx_nodes(states_graph, pos, node_size=100)
-    # nx.draw_networkx_edges(states_graph, pos)
-    # nx.draw_networkx_labels(states_graph, pos, font_size=10)
-    plt.figure(figsize=(12, 15))
-    nx.draw(states_graph, pos, with_labels=True, node_size=200, font_size=10)
-    plt.savefig(f"states_graph_{num_rows}x{num_cols}_prob{TWO_TILE_PROB}.png")
-
 
     # value iteration on the MDP
     with open(output_filename, "w") as output:
@@ -111,7 +99,7 @@ def main():
         V = {}
         V_new = {}
         for state in all_states:
-            state_str = str(state.tiles)
+            state_str = state_to_string(state)
             if state_str not in V:
                 V[state_str] = 0
             V_new[state_str] = 0
@@ -123,7 +111,7 @@ def main():
             # update V_new using values in V
             for state in all_states:
                 # print(state.tiles)
-                state_str = str(state.tiles)
+                state_str = state_to_string(state)
                 action_vals = {}
                 for move in state.moves_available():
                     # print(f" {move}")
@@ -170,8 +158,9 @@ def main():
             iter_num += 1
 
         for state in all_states:
-            state_str = str(state.tiles)
+            state_str = state_to_string(state)
             output.write(f"state {state_str}: Value = {V[state_str]}\n")
+            states_graph.nodes[state_to_string(state)]['value'] = V[state_str]
 
             action_total = 0
             for move in state.moves_available():
@@ -187,6 +176,41 @@ def main():
                 random_action_value = action_total / len(state.moves_available())
                 if random_action_value < V[state_str]:
                     output.write(f"****Random move value = {random_action_value} (a loss of {V[state_str] - random_action_value})\n")
+
+    # save graph of states to Graphviz dot format
+    nx.drawing.nx_agraph.write_dot(states_graph, f"states_graph_dot_{num_rows}x{num_cols}_prob{TWO_TILE_PROB}")
+
+    # draw the graph of states
+    fig, ax = plt.subplots(figsize=(15, 15))
+    ax.axis('off')
+    pos = graphviz_layout(states_graph, prog="dot") # "dot" is good for directed graphs
+
+    # colormap nodes using values from value iteration (mark terminal states)
+    terminal_states = [node for node in states_graph.nodes() if states_graph.out_degree(node) == 0]
+    nonterminal_states = [node for node in states_graph.nodes() if states_graph.out_degree(node) > 0]
+    nodes_terminal = nx.draw_networkx_nodes(states_graph, pos, nodelist=terminal_states,
+        node_size=200, node_shape='s',
+        node_color=[V[node] for node in terminal_states], cmap='viridis')
+    nodes_nonterminal = nx.draw_networkx_nodes(states_graph, pos, nodelist=nonterminal_states,
+        node_size=200, node_shape='o',
+        node_color=[V[node] for node in nonterminal_states], cmap='viridis')
+    fig.colorbar(nodes_nonterminal)
+
+    nx.draw_networkx_edges(states_graph, pos)
+    nx.draw_networkx_labels(states_graph, pos, font_size=8)
+    # nx.draw(states_graph, pos, with_labels=True, node_size=200, font_size=10)
+    fig.savefig(f"states_graph_{num_rows}x{num_cols}_prob{TWO_TILE_PROB}.png")
+    plt.close(fig)
+
+    ## TODO: graphing
+    # color/label edges with rewards (i.e. where tiles are merged)
+    # label edges differently for non-optimal actions
+
+    ## TODO: MDPs/playing the game
+    # topological sort of the nodes to optimize value iteration order
+    # some sort of predecessor-generating function to avoid having to enumerate all states and then topological sort?
+    # can this be applied to identify "phases" of the game (i.e. after getting to a big tile milestone e.g. the first 512-tile)
+
 
 
 if __name__ == "__main__": main()
