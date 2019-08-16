@@ -163,16 +163,25 @@ def main():
             states_graph.nodes[state_to_string(state)]['value'] = V[state_str]
 
             action_total = 0
+            best_actions = []
+            best_action_val = float('-inf')
             for move in state.moves_available():
                 successors = state.successor_states(move, prob_two_tile=TWO_TILE_PROB)
                 action_val = 0
                 for probability, successor, reward in successors:
                     # output.write(f"    -> {successor.tiles} (prob: {probability}, reward: {reward})\n")
                     action_val += probability * (reward + V[str(successor.tiles)])
+
                 output.write(f"    {move} has value {action_val}\n")
+                if action_val > best_action_val:
+                    best_action_val = action_val
+                    best_actions = [move]
+                elif action_val == best_action_val:
+                    best_actions.append(move)
                 action_total += action_val
 
             if len(state.moves_available()) > 0:
+                output.write(f"****Best move(s) = {best_actions}\n")
                 random_action_value = action_total / len(state.moves_available())
                 if random_action_value < V[state_str]:
                     output.write(f"****Random move value = {random_action_value} (a loss of {V[state_str] - random_action_value})\n")
@@ -181,35 +190,38 @@ def main():
     nx.drawing.nx_agraph.write_dot(states_graph, f"states_graph_dot_{num_rows}x{num_cols}_prob{TWO_TILE_PROB}")
 
     # draw the graph of states
-    fig, ax = plt.subplots(figsize=(15, 15))
+    fig, ax = plt.subplots(figsize=(25, 13))
     ax.axis('off')
     pos = graphviz_layout(states_graph, prog="dot") # "dot" is good for directed graphs
 
     # colormap nodes using values from value iteration (mark terminal states)
     terminal_states = [node for node in states_graph.nodes() if states_graph.out_degree(node) == 0]
     nonterminal_states = [node for node in states_graph.nodes() if states_graph.out_degree(node) > 0]
-    nodes_terminal = nx.draw_networkx_nodes(states_graph, pos, nodelist=terminal_states,
-        node_size=200, node_shape='s',
+    nodes_terminal = nx.draw_networkx_nodes(
+        states_graph, pos, nodelist=terminal_states, node_size=200, node_shape='s', alpha=0.5,
         node_color=[V[node] for node in terminal_states], cmap='viridis')
-    nodes_nonterminal = nx.draw_networkx_nodes(states_graph, pos, nodelist=nonterminal_states,
-        node_size=200, node_shape='o',
+    nodes_nonterminal = nx.draw_networkx_nodes(
+        states_graph, pos, nodelist=nonterminal_states, node_size=200, node_shape='o', alpha=0.5,
         node_color=[V[node] for node in nonterminal_states], cmap='viridis')
     fig.colorbar(nodes_nonterminal)
 
     nx.draw_networkx_edges(states_graph, pos)
     nx.draw_networkx_labels(states_graph, pos, font_size=8)
-    # nx.draw(states_graph, pos, with_labels=True, node_size=200, font_size=10)
+
     fig.savefig(f"states_graph_{num_rows}x{num_cols}_prob{TWO_TILE_PROB}.png")
     plt.close(fig)
 
     ## TODO: graphing
-    # color/label edges with rewards (i.e. where tiles are merged)
-    # label edges differently for non-optimal actions
+    # - color/label edges with rewards (i.e. where tiles are merged)
+    # - label edges differently for non-optimal actions (or alternate layers of
+    # nodes between states and actions, where state -> action edges are
+    # deterministic but action -> state edges are nondeterministic)
 
     ## TODO: MDPs/playing the game
-    # topological sort of the nodes to optimize value iteration order
-    # some sort of predecessor-generating function to avoid having to enumerate all states and then topological sort?
-    # can this be applied to identify "phases" of the game (i.e. after getting to a big tile milestone e.g. the first 512-tile)
+    # - recognizing symmetries to avoid redundant calculations
+    # - topological sort of the nodes to optimize value iteration order
+    # - some sort of predecessor-generating function to avoid having to enumerate all states and then topological sort?
+    # - can this be applied to identify "phases" of the game (i.e. after getting to a big tile milestone e.g. the first 512-tile)
 
 
 
