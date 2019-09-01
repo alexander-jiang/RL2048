@@ -1,8 +1,12 @@
 *.pyc
 *.pdf
+*.h5
 geckodriver.log
 .ipynb_checkpoints/
+wandb/
 games/
 random_bot_games/
 up_left_games/
 strong_up_left_games/
+deep_rl_training_games/
+deep_rl_validation_games/
