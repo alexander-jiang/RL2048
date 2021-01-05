@@ -1,44 +1,71 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-import argparse
+import click
 from game_engine import GameState, Game
 from keras.models import model_from_json
 import numpy as np
 import wandb
 
 
-def main():
-    parser = argparse.ArgumentParser(description='Build training/validation dataset by playing N games.')
-    parser.add_argument('model_config', type=str,
-        help='path to a model config JSON file (generated using to_json) to use when generating labels')
-    parser.add_argument('-p', '--two_tile_prob', type=float, default=0.9,
-        help='probability of spawning a 2-tile (instead of a 4-tile) after a successful move')
-    parser.add_argument('-r', '--random_seed', type=int, default=131,
-        help='random seed (for reproducibility)')
-    parser.add_argument('-n', '--num_games', type=int, default=100,
-        help='number of total games (training and validation)')
-    parser.add_argument('-s', '--val_split', type=float, default=0.2,
-        help='what fraction of the games should be used for validation')
-    parser.add_argument('-t', '--train_game_dir', type=str, default="deep_rl_training_games",
-        help='directory where training games and data are saved to')
-    parser.add_argument('-v', '--val_game_dir', type=str, default="deep_rl_validation_games",
-        help='directory where validation games and data are saved to')
-    args = parser.parse_args()
+def convert_tiles_to_bitarray(tiles) -> np.ndarray:
+    """
+    Convert from a 4x4 array, where each cell is the log base 2 value of the tile,
+    into a flattened bitarray representation, where each of the 16 cells is represented by 17 bits,
+    with the first bit set if the tile value is 2, the second bit set in the tile value is 4,
+    and so on up to 2^17 (the maximum possible tile value on a 4x4 board with 4-tiles being
+    the maximum possible spawned tile).
+    """
+    flat_tiles = np.ravel(tiles)
+    bitarray_input = np.zeros((16, 17))
+    for i in range(16):
+        if flat_tiles[i] != 0:
+            bitarray_input_idx = flat_tiles[i] - 1
+            bitarray_input[i,bitarray_input_idx] = 1
+    return np.ravel(bitarray_input)
+
+@click.command()
+@click.argument("model_config", type=str)
+@click.option("-p", "--two-tile-prob", type=float, default=0.9,
+    help='probability of spawning a 2-tile (instead of a 4-tile) after a successful move')
+@click.option("-r", "--random-seed", type=int, default=131,
+    help="random seed (for reproducibility)")
+@click.option("-n", "--num_games", type=int, default=100,
+    help="number of total games (training and validation)")
+@click.option("-s", "--val_split", type=float, default=0.2,
+    help="what fraction of the games should be used for validation")
+@click.option("-t", "--train_game_dir", type=str, default="deep_rl_training_games_v2",
+    help="directory where training games and data are saved to")
+@click.option("-v", "--val_game_dir", type=str, default="deep_rl_validation_games_v2",
+    help="directory where validation games and data are saved to")
+def main(
+    model_config: str,
+    two_tile_prob: float,
+    random_seed: int,
+    num_games: int,
+    val_split: float,
+    train_game_dir: str,
+    val_game_dir: str,
+):
+    """
+    Build training/validation dataset by playing N games.
+    model_config - path to a model config JSON file (generated using to_json) to use when generating labels
+    """
 
     # build training dataset by playing N complete games
     data_train = []
     labels_train = []
     data_val = []
     labels_val = []
-    TWO_TILE_PROB = args.two_tile_prob
-    RANDOM_SEED = args.random_seed
-    NUM_GAMES = args.num_games
-    VAL_SPLIT = args.val_split
+    TWO_TILE_PROB = two_tile_prob
+    RANDOM_SEED = random_seed
+    NUM_GAMES = num_games
+    VAL_SPLIT = val_split
     NUM_TRAIN_GAMES = int(NUM_GAMES * (1 - VAL_SPLIT))
-    TRAIN_GAME_FILES_DIR = args.train_game_dir
-    VAL_GAME_FILES_DIR = args.val_game_dir
+    TRAIN_GAME_FILES_DIR = train_game_dir
+    VAL_GAME_FILES_DIR = val_game_dir
 
-    value_model = model_from_json(args.model_config)
+    with open(model_config, 'r') as model_config_file:
+        value_model = model_from_json(model_config_file.read())
 
     # Weights & Biases
     wandb.init(project="2048-deep-rl")
@@ -56,12 +83,12 @@ def main():
         while True:
             # training data is a list of game states
             if i < NUM_TRAIN_GAMES:
-                data_train.append(np.ravel(game.state.tiles))
+                data_train.append(convert_tiles_to_bitarray(game.state.tiles))
                 if game.state.game_over:
                     labels_train.append(0) # true value of terminal state is 0 (no further rewards possible)
                     break
             else:
-                data_val.append(np.ravel(game.state.tiles))
+                data_val.append(convert_tiles_to_bitarray(game.state.tiles))
                 if game.state.game_over:
                     labels_val.append(0) # true value of terminal state is 0 (no further rewards possible)
                     break
@@ -79,7 +106,7 @@ def main():
             label = 0
             for (prob, successor, reward) in successors:
                 # print(f"successor (prob {prob}): {successor.tiles}")
-                network_input = np.expand_dims(np.ravel(successor.tiles), axis=0)
+                network_input = np.expand_dims(convert_tiles_to_bitarray(successor.tiles), axis=0)
                 network_output = value_model.predict(network_input)[0][0]
                 # print("network output:", network_output)
                 label += prob * (reward + network_output)

@@ -50,7 +50,7 @@ class GameTiles(tk.Frame):
         for i in range(4):
             for j in range(4):
                 self.tiles[i][j].grid(row=i, column=j, sticky=tk.N+tk.S+tk.W+tk.E)
-        self.grid()
+        # self.grid()
 
     def draw_tiles(self, game):
         for i in range(4):

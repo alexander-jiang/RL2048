@@ -17,3 +17,23 @@ TODO:
   - score vs. turn number
   - distribution of actions taken per game
 - implement RL model (Q-learning)
+
+### Instructions
+
+Python 3.7
+```
+conda create --name RL2048 python=3.7
+pip install -r requirements.txt
+```
+
+Set up Weights & Biases (wandb): (be sure to set environment variables first, like WANDB_API_KEY)
+```
+wandb login
+```
+
+save model config, then build dataset, then fit the model
+```
+python save_model_config.py fc_deep_rl_model_config.json
+python build_rl_dataset_v2.py fc_deep_rl_model_config.json
+python fit_rl_model_fully_connected.py value_model_fc.h5
+```

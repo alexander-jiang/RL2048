@@ -10,3 +10,7 @@ up_left_games/
 strong_up_left_games/
 deep_rl_training_games/
 deep_rl_validation_games/
+deep_rl_training_games_v2/
+deep_rl_validation_games_v2/
+**/__pycache__
+wandb.env
