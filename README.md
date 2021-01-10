@@ -18,11 +18,45 @@ TODO:
   - distribution of actions taken per game
 - implement RL model (Q-learning)
 
+
+### Deep Q-learning (DQN)
+starting with a fully connected NN as the value function approximator
+
+state representation as features:
+272 inputs (16 * 17), one 17-length bit array for each
+of the 16 cells. The first bit in each bitarray is set if the corresponding cell has a 2-tile,
+the second bit if the cell has a 4-tile, and so on (the 17th bit is set if the corresponding cell
+has a 2^17-tile, the maximum possible tile value on a 4x4 board which spawns 4-tiles at most)
+
+NN architecture: densely connected (for now)
+hidden layer 1: 64 units
+hidden layer 2: 4 units
+
+approach:
+offline/batch RL, where we play games, then compile training data for the NN
+(using the predictions of the previous iteration of the NN as the training labels)
+and update the NN weights
+
+TODO:
+- implement deep Q-learning with experience replay algorithm from Mnih et al., 2015 (see Algorithm 1)
+  - implement custom loss function in Keras to compute loss of DQN over a minibatch of (s,a,s',r) tuples?
+  - mini batch size? (i.e. sampling randomly from the original training set)
+how to do this in keras?
+SGD (stochastic gradient descent) optimizer lets you set a batch_size hyperparam
+but RMSprop is mentioned in the Google Atari Deep RL paper (Mnih et al., 2015)
+
+- increase the dataset size? (from just 100 games split 80/20 in train/val to something like 1000 or 10000?)
+may need to put this on cloud compute to get this done reasonably quickly
+how many games needed to play to make a good training set?
+
+
+
 ### Instructions
 
 Python 3.7
 ```
 conda create --name RL2048 python=3.7
+conda activate RL2048
 pip install -r requirements.txt
 ```
 
@@ -31,9 +65,11 @@ Set up Weights & Biases (wandb): (be sure to set environment variables first, li
 wandb login
 ```
 
-save model config, then build dataset, then fit the model
+save model config, generate initial weights, copy weights to a target model,
+then build dataset and fit the model
 ```
-python save_model_config.py fc_deep_rl_model_config.json
+python save_model_config.py fc_deep_rl_model_config.json --save-model Q_model_0.h5
+cp Q_model_0.h5 target_Q_model.h5
 python build_rl_dataset_v2.py fc_deep_rl_model_config.json
 python fit_rl_model_fully_connected.py value_model_fc.h5
 ```
