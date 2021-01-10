@@ -1,7 +1,7 @@
 tensorflow==2.4.0
-keras
-numpy==1.16.2
-matplotlib==3.0.3
-networkx==2.2
-click
+Keras==2.4.3
+numpy==1.19.5
+matplotlib==3.3.3
+networkx==2.5
+click==7.1.2
 wandb==0.10.12
