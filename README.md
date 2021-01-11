@@ -70,6 +70,6 @@ then build dataset and fit the model
 ```
 python save_model_config.py fc_deep_rl_model_config.json --save-model Q_model_0.h5
 cp Q_model_0.h5 target_Q_model.h5
-python build_rl_dataset_v2.py fc_deep_rl_model_config.json
-python fit_rl_model_fully_connected.py value_model_fc.h5
+python deep_q_learning_experience_replay.py Q_model_0.h5 target_Q_model.h5
+python fit_rl_model_fully_connected.py Q_model_0.h5
 ```

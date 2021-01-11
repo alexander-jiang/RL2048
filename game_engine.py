@@ -244,7 +244,10 @@ class GameState:
         successors = []
         new_state = self.copy()
         moved_any = new_state.move_tiles(move_dir)
-        assert moved_any
+        if not moved_any:
+            # "invalid" action (nothing changed)
+            # should there be a penalty for taking an "invalid" action? or will discounting parameter take care of that?
+            return [(1.0, new_state, 0)]
         reward = new_state.score - self.score
         num_empty_tiles = new_state.num_empty_tiles()
         for i in range(new_state.nrows):

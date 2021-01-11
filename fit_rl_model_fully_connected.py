@@ -1,6 +1,7 @@
 import os
 import click
 
+import tensorflow as tf
 from keras.models import Sequential
 from keras.layers import Dense, Input, Conv1D, Concatenate, Reshape
 from keras import optimizers
@@ -31,6 +32,16 @@ def main(train_game_dir: str, val_game_dir: str, save_model: str):
     wandb.init(project="2048-deep-rl")
     config = wandb.config
 
+    # optimizer settings
+    config.learn_rate = 0.001
+    config.rho = 0.9
+    config.momentum = 0.0
+    config.epsilon = 1e-07
+
+    # training settings
+    config.epochs = 100
+    config.batch_size = 32
+
     value_model = FullyConnectedNNModelFactory.get_model(config)
 
     # debugging model
@@ -54,7 +65,8 @@ def main(train_game_dir: str, val_game_dir: str, save_model: str):
     print("testing with input:", test_input)
     get_output = backend.function([value_model.layers[0].input], [value_model.layers[2].output])
     print("test output:")
-    print(get_output([data_train[0]])[0])
+    wrapped = np.expand_dims(data_train[0], axis=0)
+    print(get_output([wrapped])[0])
 
     # update model weights using the training data and labels
     value_model.fit(data_train, labels_train, epochs=config.epochs, batch_size=config.batch_size,
