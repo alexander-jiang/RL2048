@@ -68,8 +68,8 @@ wandb login
 save model config, generate initial weights, copy weights to a target model,
 then build dataset and fit the model
 ```
-python save_model_config.py fc_deep_rl_model_config.json --save-model Q_model_0.h5
-cp Q_model_0.h5 target_Q_model.h5
-python deep_q_learning_experience_replay.py Q_model_0.h5 target_Q_model.h5
-python fit_rl_model_fully_connected.py Q_model_0.h5
+python reinforcement_learning/save_model_config.py reinforcement_learning/fc_deep_rl_model_config.json --save-model q_models/Q_model_0.h5
+cp q_models/Q_model_0.h5 q_models/target_Q_model.h5
+python reinforcement_learning/deep_q_learning_experience_replay.py q_models/Q_model_0.h5 q_models/target_Q_model.h5
+python reinforcement_learning/fit_rl_model_fully_connected.py q_models/Q_model_0.h5
 ```

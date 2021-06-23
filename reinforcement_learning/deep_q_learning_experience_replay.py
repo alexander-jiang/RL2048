@@ -150,7 +150,7 @@ def main(
         experience_tuple = []
         experience_tuple.extend(convert_tiles_to_bitarray(current_state.tiles))
         experience_tuple.append(action)
-        experience_tuple.extend(convert_tiles_to_bitarray(current_state.tiles))
+        experience_tuple.extend(convert_tiles_to_bitarray(new_state.tiles))
         experience_tuple.append(reward)
         # print(f"experience tuple: {experience_tuple}")
 
