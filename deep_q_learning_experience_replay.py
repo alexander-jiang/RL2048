@@ -6,6 +6,7 @@ from keras.models import load_model
 import numpy as np
 import wandb
 import random
+import os
 
 
 def convert_tiles_to_bitarray(tiles) -> np.ndarray:
@@ -97,6 +98,9 @@ def main(
     # hold the target Q-model fixed for this many timesteps before updating with minibatch
     target_update_delay = 10_000
 
+    # save value model
+    value_model_save_period = 1_000
+
     # Each SGD update is calculated over this many experience tuples (sampled randomly from the replay memory)
     minibatch_size = 32
 
@@ -111,6 +115,8 @@ def main(
 
     # action is encoded as an int in 0..3
     ACTIONS = ["Up", "Down", "Left", "Right"]
+
+    value_model.compile(optimizer="sgd", loss="mean_squared_error")
 
     # Generate the experience tuples to fill replay memory for one episode of training
     #
@@ -135,7 +141,7 @@ def main(
             print(f"New game (random seed = {RANDOM_SEED})")
 
         current_state = game.state.copy()
-        print("current state:", current_state.tiles)
+        # print("current state:", current_state.tiles)
 
         # choose an action uniformly at random during the burn-in period (to initially populate the replay memory)
         action = np.random.choice(np.arange(4))
@@ -143,7 +149,7 @@ def main(
         # update current state using the chosen action
         game.move(ACTIONS[action])
         new_state = game.state.copy()
-        print("new state:", new_state.tiles)
+        # print("new state:", new_state.tiles)
         reward = new_state.score - current_state.score
 
         # save the (s,a,s',r) experience tuple (flattened) to replay memory
@@ -162,6 +168,7 @@ def main(
 
     timesteps_since_last_update = 0
     for t in range(timesteps_per_episode):
+        print(f"timestep = {t}")
         if game.state.game_over:
             RANDOM_SEED = random.randrange(100_000)
             game = Game()
@@ -170,7 +177,7 @@ def main(
             print(f"New game (random seed = {RANDOM_SEED})")
 
         current_state = game.state.copy()
-        print("current state:", current_state.tiles)
+        # print("current state:", current_state.tiles)
 
         # choose an action (epsilon-greedy)
         epsilon_greedy_roll = np.random.random_sample()
@@ -182,21 +189,21 @@ def main(
             network_input = np.expand_dims(convert_tiles_to_bitarray(current_state.tiles), axis=0)
             network_output = value_model.predict(network_input)[0]
             assert len(network_output) == 4
-            print(f"network output: {network_output}")
+            # print(f"network output: {network_output}")
             action = np.argmax(network_output)
-            print("chosen action (best):", ACTIONS[action])
+            # print("chosen action (best):", ACTIONS[action])
 
         # update current state using the chosen action
         game.move(ACTIONS[action])
         new_state = game.state.copy()
-        print("new state:", new_state.tiles)
+        # print("new state:", new_state.tiles)
         reward = new_state.score - current_state.score
 
         # save the (s,a,s',r) experience tuple (flattened) to replay memory
         experience_tuple = []
         experience_tuple.extend(convert_tiles_to_bitarray(current_state.tiles))
         experience_tuple.append(action)
-        experience_tuple.extend(convert_tiles_to_bitarray(current_state.tiles))
+        experience_tuple.extend(convert_tiles_to_bitarray(new_state.tiles))
         experience_tuple.append(reward)
         # print(f"experience tuple: {experience_tuple}")
 
@@ -213,13 +220,13 @@ def main(
         # TODO is the minibatch sampled without replacement?
         minibatch_indices = np.random.choice(replay_memory_ndarray.shape[0], minibatch_size, replace=False)
         minibatch = replay_memory_ndarray[minibatch_indices]
-        print(f"minibatch shape: ", minibatch.shape)
+        # print(f"minibatch shape: ", minibatch.shape)
         assert minibatch.shape == (minibatch_size, replay_memory_ndarray.shape[1])
 
         # Compute the labels for the minibatch based on target Q model
         # TODO vectorize this calculation?
         labels = np.zeros((minibatch_size,))
-        print(f"labels shape: ", labels.shape)
+        # print(f"labels shape: ", labels.shape)
         for j in range(minibatch_size):
             # Parse out (s, a, s', r) from the (flattened) experience tuple
             _, _, new_state_bitarray, reward = parse_flattened_experience_tuple(minibatch[j])
@@ -227,16 +234,33 @@ def main(
             target_output = target_model.predict(target_input)[0]
             best_q_value = np.max(target_output)
             labels[j] = reward + gamma * best_q_value
-        print(f"labels: ", labels)
+        # print(f"labels: ", labels)
 
         # Perform SGD update on current Q model weights based on minibatch & labels
-        raise NotImplementedError("SGD update on minibatch not implemented")
+        minibatch_x = minibatch[:, :(16 * 17)]
+        _first_record = minibatch_x[0].reshape((4, 4, 17))
+        # print(f"minibatch_x shape = {minibatch_x.shape}, first record = {_first_record}")
+        value_model.fit(x=minibatch_x, y=labels, batch_size=minibatch_size, verbose=1)
+
+        model_h5_filename = os.path.splitext(model_h5_file)[0]
+        model_h5_out = f"{model_h5_filename}_{t}.h5"
+        if t % value_model_save_period == 0 and t > 0:
+            print(f"==== Saving value model to {model_h5_out} ====")
+            value_model.save(model_h5_out)
 
         # Only update the target model to match the current Q model every C timesteps
         timesteps_since_last_update += 1
-        if timestamps_since_last_update >= target_update_delay:
+        if timesteps_since_last_update >= target_update_delay:
             timesteps_since_last_update = 0
-            # TODO update the target model
+
+            # update the target model
+            model_h5_out = f"{model_h5_filename}_{t}.h5"
+            value_model.save(model_h5_out)
+            target_model = load_model(model_h5_out)
+            target_h5_filename = os.path.splitext(target_h5_file)[0]
+            target_h5_out = f"{target_h5_filename}_{t}.h5"
+            print(f"==== Saving target model to {target_h5_out} ====")
+            target_model.save(target_h5_out)
 
     # # Cast data and labels to numpy arrays
     # # TODO use tensorflow Dataset instead?
