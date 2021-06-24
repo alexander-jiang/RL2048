@@ -5,3 +5,4 @@ matplotlib==3.3.3
 networkx==2.5
 click==7.1.2
 wandb==0.10.12
+pytest>=6.2.4
