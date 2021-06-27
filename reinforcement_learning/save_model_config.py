@@ -11,12 +11,17 @@ from deep_rl_models.fully_connected_nn import FullyConnectedNNModelFactory
 
 @click.command()
 @click.argument("model_config", type=str)
-@click.option("--save-model", type=str, default="", help="if not empty, path to save full model (as .h5 file)")
+@click.option(
+    "--save-model",
+    type=str,
+    default="",
+    help="if not empty, path to save full model (as .h5 file)",
+)
 def main(model_config: str, save_model: str):
     """
     Save the initialized model configuration as a JSON file, and optionally
     save the full model as a .h5 file.
-    
+
     model_config - the path to save model configuration (as JSON file)
     """
     # Weights & Biases
@@ -31,13 +36,11 @@ def main(model_config: str, save_model: str):
     print(value_model.summary())
 
     # save the JSON to a file
-    with open(model_config, 'w') as local_file:
+    with open(model_config, "w") as local_file:
         local_file.write(model_json_str)
         # json.dump(model_json_str, local_file)
 
-    with open(os.path.join(wandb.run.dir, model_config), 'w') as wandb_file:
-        wandb_file.write(model_json_str)
-        # json.dump(model_json_str, wandb_file)
+    wandb.save(model_config)
 
     # Save entire model (weights, model config, optimizer config) to a HDF5 file
     if len(save_model) > 0:

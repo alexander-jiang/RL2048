@@ -13,9 +13,9 @@ class ExperienceReplay(BaseExperienceReplay):
 
     def __repr__(self):
         return (
-            f"Previous state {self.state_tiles}\n"
+            f"Previous state {tiles_repr(self.state_tiles)}\n"
             f"Action: {self.action}\n"
-            f"New state {self.successor_tiles}\n"
+            f"New state {tiles_repr(self.successor_tiles)}\n"
             f"Reward: {self.reward}"
         )
 
