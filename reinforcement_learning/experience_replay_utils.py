@@ -63,8 +63,12 @@ def convert_bitarray_to_tiles(bitarray: np.ndarray) -> list:
         tile_row = []
         for c in range(4):
             one_hot_tile_encoding = bitarray_reshape[r,c]
-            assert np.sum(one_hot_tile_encoding) == 1                
-            tile_row.append(np.argmax(one_hot_tile_encoding) + 1)
+            if np.count_nonzero(one_hot_tile_encoding) == 0:
+                tile_row.append(0)
+            else:
+                assert np.sum(one_hot_tile_encoding) == 1
+                assert np.count_nonzero(one_hot_tile_encoding) == 1
+                tile_row.append(np.argmax(one_hot_tile_encoding) + 1)
         tiles.append(tile_row)
     return tiles
 
