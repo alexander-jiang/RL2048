@@ -76,5 +76,8 @@ python reinforcement_learning/fit_rl_model_fully_connected.py q_models/Q_model_0
 
 
 ```
-python3 -m reinforcement_learning.save_model_config reinforcement_learning/fc_deep_rl_model_config.json --save-model q_models/Q_model_0.h5
+python3 -m reinforcement_learning.save_model_config reinforcement_learning/fc_deep_rl_model_config.json --save-model q_models/Q_model.h5
+cp q_models/Q_model.h5 q_models/target_Q_model.h5
+python3 -m reinforcement_learning.deep_q_learning_experience_replay q_models/Q_model.h5 q_models/target_Q_model.h5
+
 ```

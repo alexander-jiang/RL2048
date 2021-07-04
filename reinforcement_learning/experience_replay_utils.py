@@ -1,21 +1,25 @@
-
 from collections import namedtuple
 from typing import List
 import numpy as np
 
-BaseExperienceReplay = namedtuple("BaseExperienceReplay", ["state_tiles", "action", "successor_tiles", "reward"])
+BaseExperienceReplay = namedtuple(
+    "BaseExperienceReplay", ["state_tiles", "action", "successor_tiles", "reward"]
+)
+# action is encoded as an int in 0..3
+ACTIONS = ["Up", "Down", "Left", "Right"]
+
 
 class ExperienceReplay(BaseExperienceReplay):
     """
-    An experience replay tuple with helper functions to convert to and from 
+    An experience replay tuple with helper functions to convert to and from
     a flattened representation (e.g. for a neural net).
     """
 
     def __repr__(self):
         return (
-            f"Previous state {tiles_repr(self.state_tiles)}\n"
-            f"Action: {self.action}\n"
-            f"New state {tiles_repr(self.successor_tiles)}\n"
+            f"Previous state\n{tiles_repr(self.state_tiles)}\n"
+            f"Action: {int(self.action)} ({ACTIONS[int(self.action)]})\n"
+            f"New state\n{tiles_repr(self.successor_tiles)}\n"
             f"Reward: {self.reward}"
         )
 
@@ -26,7 +30,7 @@ class ExperienceReplay(BaseExperienceReplay):
     @property
     def successor_bitarray(self) -> np.ndarray:
         return convert_tiles_to_bitarray(self.successor_tiles)
-    
+
     def flatten(self) -> np.ndarray:
         """stores the (s, a, s', r) in a flattened representation"""
         return np.hstack(
@@ -34,7 +38,7 @@ class ExperienceReplay(BaseExperienceReplay):
                 self.state_bitarray,
                 np.array([self.action]),
                 self.successor_bitarray,
-                np.array([self.reward])
+                np.array([self.reward]),
             )
         )
 
@@ -42,15 +46,15 @@ class ExperienceReplay(BaseExperienceReplay):
     def from_flattened(cls, flat_tuple: np.ndarray):
         assert flat_tuple.shape == (2 * 16 * 17 + 2,)
 
-        current_state_bitarray = flat_tuple[0:(16 * 17)]
+        current_state_bitarray = flat_tuple[0 : (16 * 17)]
         action = flat_tuple[16 * 17]
-        new_state_bitarray = flat_tuple[(16 * 17 + 1):(2 * 16 * 17 + 1)]
+        new_state_bitarray = flat_tuple[(16 * 17 + 1) : (2 * 16 * 17 + 1)]
         reward = flat_tuple[(2 * 16 * 17 + 1)]
 
         current_state_tiles = convert_bitarray_to_tiles(current_state_bitarray)
         new_state_tiles = convert_bitarray_to_tiles(new_state_bitarray)
         return cls(current_state_tiles, action, new_state_tiles, reward)
-    
+
 
 def convert_tiles_to_bitarray(tiles) -> np.ndarray:
     """
@@ -66,13 +70,14 @@ def convert_tiles_to_bitarray(tiles) -> np.ndarray:
         if flat_tiles[i] != 0:
             # value of 1 (means the the tile is 2) should set bit 0 in bitarray
             bitarray_input_idx = flat_tiles[i] - 1
-            bitarray_input[i,bitarray_input_idx] = 1
+            bitarray_input[i, bitarray_input_idx] = 1
     return np.ravel(bitarray_input)
+
 
 def convert_bitarray_to_tiles(bitarray: np.ndarray) -> list:
     """
-    Convert from flattened bitarray representation, where each of the 16 cells is 
-    represented by 17 bits (first bit is set if tile value is 2), to a 4x4 array, 
+    Convert from flattened bitarray representation, where each of the 16 cells is
+    represented by 17 bits (first bit is set if tile value is 2), to a 4x4 array,
     where each cell is the log base 2 value of the tile.
     """
     assert bitarray.size == 16 * 17
@@ -81,7 +86,7 @@ def convert_bitarray_to_tiles(bitarray: np.ndarray) -> list:
     for r in range(4):
         tile_row = []
         for c in range(4):
-            one_hot_tile_encoding = bitarray_reshape[r,c]
+            one_hot_tile_encoding = bitarray_reshape[r, c]
             if np.count_nonzero(one_hot_tile_encoding) == 0:
                 tile_row.append(0)
             else:
@@ -91,6 +96,7 @@ def convert_bitarray_to_tiles(bitarray: np.ndarray) -> list:
         tiles.append(tile_row)
     return tiles
 
+
 # def parse_flattened_experience_tuple(flat_tuple: np.ndarray):
 #     assert flat_tuple.shape == (2 * 16 * 17 + 2,)
 
@@ -99,6 +105,7 @@ def convert_bitarray_to_tiles(bitarray: np.ndarray) -> list:
 #     new_state_bitarray = flat_tuple[(16 * 17 + 1):(2 * 16 * 17 + 1)]
 #     reward = flat_tuple[(2 * 16 * 17 + 1)]
 #     return (current_state_bitarray, action, new_state_bitarray, reward)
+
 
 def tiles_repr(tiles: List[List[int]]) -> str:
     output = ""
